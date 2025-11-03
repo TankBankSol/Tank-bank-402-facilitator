@@ -95,6 +95,7 @@ app.post(
     simulateTransactions: context.config.simulateTransactions,
     config: {
       facilitatorPrivateKey: context.config.facilitatorPrivateKey,
+      solanaNetwork: context.config.solanaNetwork,
     },
   })
 );

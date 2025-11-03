@@ -31,7 +31,7 @@ export function getServerConfig(): ServerConfig {
       merchantSolanaAddress: process.env.MERCHANT_SOLANA_ADDRESS,
       facilitatorPublicKey: process.env.FACILITATOR_PUBLIC_KEY,
       solanaRpcUrl: process.env.SOLANA_RPC_URL,
-      solanaNetwork: process.env.SOLANA_NETWORK ?? 'devnet',
+      solanaNetwork: process.env.SOLANA_NETWORK ?? 'mainnet-beta',
     });
 
     return config;

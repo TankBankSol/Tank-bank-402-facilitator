@@ -16,6 +16,7 @@ export interface SettleRouteContext {
   simulateTransactions: boolean;
   config: {
     facilitatorPrivateKey: string;
+    solanaNetwork?: string;
   };
 }
 
@@ -113,7 +114,7 @@ export function settlePaymentRoute(context: SettleRouteContext) {
           );
           console.log('ATOMIC SETTLEMENT complete!');
           console.log(
-            `   View on Solana Explorer: https://explorer.solana.com/tx/${transactionSignature}?cluster=devnet`
+            `   View on Solana Explorer: https://explorer.solana.com/tx/${transactionSignature}${context.config?.solanaNetwork === 'mainnet-beta' ? '' : '?cluster=' + context.config?.solanaNetwork}`
           );
         } catch (error) {
           console.error('Sponsored transaction failed:', error);

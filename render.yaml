@@ -18,11 +18,11 @@ services:
       - key: FACILITATOR_PUBLIC_KEY
         sync: false  # Set this in Render dashboard
       - key: SOLANA_RPC_URL
-        value: https://api.devnet.solana.com
+        value: https://api.mainnet-beta.solana.com
       - key: SOLANA_WS_URL
-        value: wss://api.devnet.solana.com
+        value: wss://api.mainnet-beta.solana.com
       - key: SOLANA_NETWORK
-        value: devnet
+        value: mainnet-beta
       - key: SIMULATE_TRANSACTIONS
         value: false
       - key: MAX_PAYMENT_AMOUNT
@@ -63,11 +63,11 @@ services:
       - key: MERCHANT_SOLANA_ADDRESS
         sync: false  # Set this in Render dashboard
       - key: SOLANA_RPC_URL
-        value: https://api.devnet.solana.com
+        value: https://api.mainnet-beta.solana.com
       - key: SOLANA_WS_URL
-        value: wss://api.devnet.solana.com
+        value: wss://api.mainnet-beta.solana.com
       - key: SOLANA_NETWORK
-        value: devnet
+        value: mainnet-beta
       - key: REQUEST_TIMEOUT
         value: 30000
       - key: RETRY_ATTEMPTS

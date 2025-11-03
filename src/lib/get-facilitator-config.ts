@@ -39,15 +39,15 @@ export function getFacilitatorConfig(): FacilitatorConfig {
       port: process.env.FACILITATOR_PORT ?? 3001,
       facilitatorPrivateKey: process.env.FACILITATOR_PRIVATE_KEY,
       facilitatorPublicKey: process.env.FACILITATOR_PUBLIC_KEY,
-      solanaRpcUrl: process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com',
-      solanaWsUrl: process.env.SOLANA_WS_URL ?? 'wss://api.devnet.solana.com',
+      solanaRpcUrl: process.env.SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com',
+      solanaWsUrl: process.env.SOLANA_WS_URL ?? 'wss://api.mainnet-beta.solana.com',
       databasePath: process.env.DATABASE_PATH ?? './src/facilitator/nonce.db',
       usdcMintAddress: process.env.USDC_MINT_ADDRESS ?? '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
       usdcDecimals: process.env.USDC_DECIMALS ?? 6,
       maxPaymentAmount: process.env.MAX_PAYMENT_AMOUNT ?? '1000000000',
       nonceExpiryHours: process.env.NONCE_EXPIRY_HOURS ?? 24,
       simulateTransactions: process.env.SIMULATE_TRANSACTIONS ?? 'true',
-      solanaNetwork: process.env.SOLANA_NETWORK ?? 'devnet',
+      solanaNetwork: process.env.SOLANA_NETWORK ?? 'mainnet-beta',
     });
 
     return config;

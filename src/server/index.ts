@@ -151,7 +151,7 @@ app.get('/api/premium-data', gamingRateLimit, premiumRouteMw.middleware, (req, r
   res.set({
     'x-payment-processed': 'true',
     'x-payment-method': 'solana-sol',
-    'x-payment-network': 'devnet',
+    'x-payment-network': context.config.solanaNetwork || 'mainnet-beta',
     'x-payment-transaction': req.payment?.transactionSignature,
   });
 
