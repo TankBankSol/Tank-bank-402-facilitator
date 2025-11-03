@@ -37,13 +37,7 @@ export const paymentRateLimit = rateLimit({
     retryAfter: '1 minute'
   },
   standardHeaders: true,
-  legacyHeaders: false,
-  // Use custom key generator to rate limit by IP + User-Agent
-  keyGenerator: (req) => {
-    const ip = req.ip;
-    const userAgent = req.get('User-Agent') || 'unknown';
-    return `${ip}:${userAgent.slice(0, 50)}`;
-  }
+  legacyHeaders: false
 });
 
 /**
@@ -108,21 +102,7 @@ export const createWalletRateLimit = (maxRequests: number, windowMinutes: number
       message: `Too many requests from this wallet. Limit: ${maxRequests} per ${windowMinutes} minutes.`,
       retryAfter: `${windowMinutes} minutes`
     },
-    keyGenerator: (req) => {
-      // Try to extract wallet address from payment request
-      try {
-        const { paymentRequest } = req.body;
-        if (paymentRequest) {
-          const parsed = JSON.parse(paymentRequest);
-          if (parsed.clientPublicKey) {
-            return `wallet:${parsed.clientPublicKey}`;
-          }
-        }
-      } catch (error) {
-        // Fallback to IP if wallet extraction fails
-      }
-      return `ip:${req.ip}`;
-    },
+    // Simplified to use default IP-based rate limiting for IPv6 compatibility
     standardHeaders: true,
     legacyHeaders: false
   });
