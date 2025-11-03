@@ -18,9 +18,9 @@ services:
       - key: FACILITATOR_PUBLIC_KEY
         sync: false  # Set this in Render dashboard
       - key: SOLANA_RPC_URL
-        value: https://api.mainnet-beta.solana.com
+        sync: false  # Set this in Render dashboard
       - key: SOLANA_WS_URL
-        value: wss://api.mainnet-beta.solana.com
+        sync: false  # Set this in Render dashboard
       - key: SOLANA_NETWORK
         value: mainnet-beta
       - key: SIMULATE_TRANSACTIONS
@@ -63,9 +63,9 @@ services:
       - key: MERCHANT_SOLANA_ADDRESS
         sync: false  # Set this in Render dashboard
       - key: SOLANA_RPC_URL
-        value: https://api.mainnet-beta.solana.com
+        sync: false  # Set this in Render dashboard
       - key: SOLANA_WS_URL
-        value: wss://api.mainnet-beta.solana.com
+        sync: false  # Set this in Render dashboard
       - key: SOLANA_NETWORK
         value: mainnet-beta
       - key: REQUEST_TIMEOUT
