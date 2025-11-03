@@ -22,8 +22,8 @@ import {
   paymentRateLimit,
   settlementRateLimit,
   statsRateLimit,
-  nonceRateLimit,
-  createWalletRateLimit
+  nonceRateLimit
+  // createWalletRateLimit temporarily disabled for IPv6 compatibility
 } from '../lib/rate-limiting.js';
 
 // Initialize context
@@ -74,7 +74,7 @@ app.get(
 app.post(
   '/verify',
   paymentRateLimit,
-  createWalletRateLimit(150, 60), // 150 verifications per hour per wallet (gaming-friendly)
+  // createWalletRateLimit(150, 60), // Temporarily disabled for IPv6 compatibility
   verifyPaymentRoute({
     solanaUtils: context.solanaUtils,
     nonceDb: context.nonceDb,
@@ -86,7 +86,7 @@ app.post(
 app.post(
   '/settle',
   settlementRateLimit,
-  createWalletRateLimit(120, 60), // 120 settlements per hour per wallet (gaming-friendly)
+  // createWalletRateLimit(120, 60), // Temporarily disabled for IPv6 compatibility
   settlePaymentRoute({
     solanaUtils: context.solanaUtils,
     nonceDb: context.nonceDb,
