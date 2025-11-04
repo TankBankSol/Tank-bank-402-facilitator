@@ -8,3 +8,4 @@ export * from './verify.js';
 export * from './settle.js';
 export * from './nonce.js';
 export * from './stats.js';
+export * from './store-nonce.js';

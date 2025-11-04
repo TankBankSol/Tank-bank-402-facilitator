@@ -5,6 +5,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 
 export interface X402Options {
   facilitatorUrl?: string;
@@ -152,10 +153,53 @@ export class X402Middleware {
           const requestDeveloperWallet = req.headers['x-developer-wallet'] as string;
           const activeDeveloperWallet = requestDeveloperWallet || developerWallet;
 
+          // Generate nonce for payment coordination between server and facilitator
+          const nonce = crypto.randomBytes(16).toString('hex');
+          const timestamp = Date.now();
+          const expiry = timestamp + (maxTimeoutSeconds || 300) * 1000;
+
           // Calculate split amounts for atomic transaction
           const totalAmount = parseInt(amount || '10000000');
           const tankBankAmount = Math.floor(totalAmount * 0.4); // 40% to Tank Bank
           const developerAmount = Math.floor(totalAmount * 0.6); // 60% to Developer
+
+          // Store nonce in facilitator for later settlement
+          try {
+            await fetch(`${process.env.FACILITATOR_URL || 'http://localhost:3001'}/store-nonce`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nonce,
+                amount: totalAmount.toString(),
+                recipient: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
+                resourceId: req.path,
+                resourceUrl: `${req.protocol}://${req.get('host')}${req.path}`,
+                timestamp,
+                expiry,
+                splitPayment: activeDeveloperWallet ? {
+                  enabled: true,
+                  totalAmount,
+                  recipients: [
+                    {
+                      address: activeDeveloperWallet,
+                      amount: developerAmount,
+                      percentage: 60,
+                      description: 'Developer revenue share'
+                    },
+                    {
+                      address: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
+                      amount: tankBankAmount,
+                      percentage: 40,
+                      description: 'Tank Bank service fee'
+                    }
+                  ]
+                } : { enabled: false }
+              })
+            });
+          } catch (error) {
+            console.error('Failed to store nonce in facilitator:', error);
+            // Continue anyway - facilitator might handle nonce generation differently
+          }
 
           // Return HTTP 402 Payment Required with split payment schema
           res.status(402).json({
@@ -172,6 +216,9 @@ export class X402Middleware {
                 payTo: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
                 maxTimeoutSeconds: maxTimeoutSeconds || 300,
                 asset: asset || 'SOL',
+                nonce: nonce,
+                timestamp: timestamp,
+                expiry: expiry,
                 // Split payment information
                 splitPayment: activeDeveloperWallet ? {
                   enabled: true,

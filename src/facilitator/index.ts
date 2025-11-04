@@ -14,6 +14,7 @@ import {
   getNonceRoute,
   getStatsRoute,
   cleanupNoncesRoute,
+  storeNonceRoute,
 } from '../routes/index.js';
 import { REQUEST_BODY_LIMIT, CLEANUP_INTERVAL_MS } from '../lib/constants.js';
 import {
@@ -78,7 +79,8 @@ app.get('/', (_req, res) => {
       verify: '/verify',
       settle: '/settle',
       nonce: '/nonce/:nonce',
-      stats: '/stats'
+      stats: '/stats',
+      storeNonce: '/store-nonce'
     }
   });
 });
@@ -132,6 +134,14 @@ app.get(
   '/stats',
   statsRateLimit,
   getStatsRoute({
+    nonceDb: context.nonceDb,
+  })
+);
+
+app.post(
+  '/store-nonce',
+  paymentRateLimit,
+  storeNonceRoute({
     nonceDb: context.nonceDb,
   })
 );
