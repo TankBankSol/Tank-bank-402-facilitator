@@ -81,6 +81,11 @@ app.get('/', (_req, res) => {
     service: 'x402 Server',
     status: 'running',
     version: '1.0.0',
+    revenueSplit: {
+      tankBank: '40%',
+      developer: '60%',
+      description: 'Developers keep 60% of all payments, Tank Bank takes 40% service fee'
+    },
     endpoints: {
       health: '/health',
       public: '/public',
@@ -89,6 +94,10 @@ app.get('/', (_req, res) => {
       'download': '/api/download/:fileId',
       'tier-access': '/api/tier/:tier',
       stats: '/stats'
+    },
+    integration: {
+      example: 'Set DEVELOPER_WALLET_ADDRESS environment variable to receive 60% of payments',
+      currentDeveloperWallet: process.env.DEVELOPER_WALLET_ADDRESS || 'Not configured - payments go 100% to Tank Bank'
     }
   });
 });
@@ -126,14 +135,16 @@ app.get('/public', (_req, res) => {
 // ============================================================================
 
 // Premium data endpoint - 0.0001 SOL with split payment
+// NOTE: In production, developers would set their own developerWallet address
 const premiumRouteMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.PREMIUM_DATA,
     payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
-    developerWallet: 'BjbMd9zdg1k9ziSjkWMSq3cZwQVTMZxuC7uFPtBGrMKE', // Example: teaFee wallet gets 60%
+    // Developers replace this with their own wallet address for 60% revenue share
+    developerWallet: process.env.DEVELOPER_WALLET_ADDRESS || undefined,
     asset: 'SOL',
     network: context.config.solanaNetwork === 'devnet' ? 'base' : 'base',
-    description: 'Premium data access with 40/60 revenue split',
+    description: 'Premium data access - Developer gets 60%, Tank Bank gets 40%',
     mimeType: 'application/json',
     maxTimeoutSeconds: 300,
     outputSchema: {

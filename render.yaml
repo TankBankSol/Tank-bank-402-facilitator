@@ -62,6 +62,8 @@ services:
         value: https://facilitator.tankbank.app
       - key: MERCHANT_SOLANA_ADDRESS
         sync: false  # Set this in Render dashboard
+      - key: DEVELOPER_WALLET_ADDRESS
+        sync: false  # Optional: Set developer wallet for 60% revenue share
       - key: SOLANA_RPC_URL
         sync: false  # Set this in Render dashboard
       - key: SOLANA_WS_URL
