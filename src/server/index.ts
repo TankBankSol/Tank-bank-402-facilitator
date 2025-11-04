@@ -125,14 +125,15 @@ app.get('/public', (_req, res) => {
 // PROTECTED ENDPOINTS (x402 Payment Required)
 // ============================================================================
 
-// Premium data endpoint - 0.01 SOL
+// Premium data endpoint - 0.0001 SOL with split payment
 const premiumRouteMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.PREMIUM_DATA,
     payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
+    developerWallet: 'BjbMd9zdg1k9ziSjkWMSq3cZwQVTMZxuC7uFPtBGrMKE', // Example: teaFee wallet gets 60%
     asset: 'SOL',
     network: context.config.solanaNetwork === 'devnet' ? 'base' : 'base',
-    description: 'Premium data access with exclusive content and real-time updates',
+    description: 'Premium data access with 40/60 revenue split',
     mimeType: 'application/json',
     maxTimeoutSeconds: 300,
     outputSchema: {

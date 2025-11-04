@@ -16,6 +16,7 @@ export interface X402Options {
 export interface RouteConfig {
   amount?: string;
   payTo?: string;
+  developerWallet?: string; // Developer wallet for 60% split
   asset?: string;
   network?: string;
   description?: string;
@@ -137,6 +138,7 @@ export class X402Middleware {
           const {
             amount,
             payTo,
+            developerWallet,
             asset,
             network,
             description,
@@ -146,7 +148,12 @@ export class X402Middleware {
             extra
           } = this.routeConfig;
 
-          // Return HTTP 402 Payment Required with x402hub compliant schema
+          // Calculate split amounts for atomic transaction
+          const totalAmount = parseInt(amount || '10000000');
+          const tankBankAmount = Math.floor(totalAmount * 0.4); // 40% to Tank Bank
+          const developerAmount = Math.floor(totalAmount * 0.6); // 60% to Developer
+
+          // Return HTTP 402 Payment Required with split payment schema
           res.status(402).json({
             x402Version: 1,
             error: 'Payment Required',
@@ -161,6 +168,27 @@ export class X402Middleware {
                 payTo: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
                 maxTimeoutSeconds: maxTimeoutSeconds || 300,
                 asset: asset || 'SOL',
+                // Split payment information
+                splitPayment: developerWallet ? {
+                  enabled: true,
+                  totalAmount: totalAmount,
+                  recipients: [
+                    {
+                      address: developerWallet,
+                      amount: developerAmount,
+                      percentage: 60,
+                      description: 'Developer revenue share'
+                    },
+                    {
+                      address: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
+                      amount: tankBankAmount,
+                      percentage: 40,
+                      description: 'Tank Bank service fee'
+                    }
+                  ]
+                } : {
+                  enabled: false
+                },
                 ...(outputSchema && { outputSchema }),
                 ...(extra && { extra })
               },
