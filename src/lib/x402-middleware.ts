@@ -148,6 +148,10 @@ export class X402Middleware {
             extra
           } = this.routeConfig;
 
+          // Check for dynamic developer wallet from request headers (for SDK integration)
+          const requestDeveloperWallet = req.headers['x-developer-wallet'] as string;
+          const activeDeveloperWallet = requestDeveloperWallet || developerWallet;
+
           // Calculate split amounts for atomic transaction
           const totalAmount = parseInt(amount || '10000000');
           const tankBankAmount = Math.floor(totalAmount * 0.4); // 40% to Tank Bank
@@ -169,12 +173,12 @@ export class X402Middleware {
                 maxTimeoutSeconds: maxTimeoutSeconds || 300,
                 asset: asset || 'SOL',
                 // Split payment information
-                splitPayment: developerWallet ? {
+                splitPayment: activeDeveloperWallet ? {
                   enabled: true,
                   totalAmount: totalAmount,
                   recipients: [
                     {
-                      address: developerWallet,
+                      address: activeDeveloperWallet,
                       amount: developerAmount,
                       percentage: 60,
                       description: 'Developer revenue share'
