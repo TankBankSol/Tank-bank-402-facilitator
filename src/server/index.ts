@@ -27,6 +27,10 @@ const app: Express = express();
 
 // Setup middleware
 app.use(helmet());
+
+// Trust proxy for rate limiting (required for Render)
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: [
     'https://tankbank.app',
@@ -70,6 +74,24 @@ const x402Utils = createX402MiddlewareWithUtils(
 // ============================================================================
 // ROUTES
 // ============================================================================
+
+// Root route
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'x402 Server',
+    status: 'running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      public: '/public',
+      'premium-data': '/api/premium-data',
+      'generate-content': '/api/generate-content',
+      'download': '/api/download/:fileId',
+      'tier-access': '/api/tier/:tier',
+      stats: '/stats'
+    }
+  });
+});
 
 // Health check endpoint
 app.get('/health', async (_req, res) => {
