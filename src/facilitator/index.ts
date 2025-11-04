@@ -73,7 +73,7 @@ app.get('/', (_req, res) => {
   res.json({
     service: 'x402 Facilitator',
     status: 'running',
-    version: '1.0.0',
+    version: '1.0.1',
     endpoints: {
       health: '/health',
       verify: '/verify',
