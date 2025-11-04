@@ -87,10 +87,12 @@ export function settlePaymentRoute(context: SettleRouteContext) {
       const requiredAmount = BigInt(nonceDetails.amount);
 
       if (!context.simulateTransactions) {
-        // Check SOL balances in devnet mode
-        const clientBalance = await context.solanaUtils.getSOLBalance(nonceDetails.clientPublicKey);
+        // Check SOL balances - use clientPublicKey from PaymentRequest, not stored nonce
+        const clientPublicKey = paymentReq.clientPublicKey;
+        const clientBalance = await context.solanaUtils.getSOLBalance(clientPublicKey);
 
         console.log('SOL Balance check:', {
+          clientPublicKey: clientPublicKey,
           clientBalance: clientBalance.toString(),
           requiredAmount: requiredAmount.toString(),
           sufficient: clientBalance >= requiredAmount,
