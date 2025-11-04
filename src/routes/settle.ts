@@ -64,7 +64,23 @@ export function settlePaymentRoute(context: SettleRouteContext) {
         amount: nonceDetails.amount,
         clientPublicKey: nonceDetails.clientPublicKey,
         recipient: nonceDetails.recipient,
+        splitPayment: nonceDetails.splitPaymentData?.enabled || false,
       });
+
+      // Check for split payment configuration
+      if (nonceDetails.splitPaymentData?.enabled) {
+        console.log('🔀 SPLIT PAYMENT DETECTED:');
+        console.log('   Total Amount:', nonceDetails.splitPaymentData.totalAmount, 'lamports');
+        nonceDetails.splitPaymentData.recipients.forEach((recipient, index) => {
+          console.log(`   Recipient ${index + 1}:`, {
+            address: recipient.address,
+            amount: recipient.amount,
+            percentage: `${recipient.percentage}%`,
+            description: recipient.description
+          });
+        });
+        console.log('   Transaction will be atomic (single transaction, multiple recipients)');
+      }
 
       // Payment setup validated and ready for settlement
 

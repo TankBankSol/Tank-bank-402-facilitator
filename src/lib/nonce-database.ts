@@ -6,6 +6,19 @@
 import sqlite3 from 'sqlite3';
 import { DatabaseError, NonceError } from '../errors/index.js';
 
+export interface SplitPaymentRecipient {
+  address: string;
+  amount: string;
+  percentage: number;
+  description: string;
+}
+
+export interface SplitPaymentData {
+  enabled: boolean;
+  totalAmount: string;
+  recipients: SplitPaymentRecipient[];
+}
+
 export interface NonceData {
   nonce: string;
   clientPublicKey: string;
@@ -15,6 +28,7 @@ export interface NonceData {
   resourceUrl: string;
   timestamp: number;
   expiry: number;
+  splitPaymentData?: SplitPaymentData;
 }
 
 export interface NonceDetails extends NonceData {
@@ -107,6 +121,7 @@ export class NonceDatabase {
           expiry INTEGER NOT NULL,
           used_at INTEGER,
           transaction_signature TEXT,
+          split_payment_data TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `;
@@ -139,7 +154,16 @@ export class NonceDatabase {
             return;
           }
           console.log('Created transactions table');
-          resolve();
+
+          // Add split_payment_data column if it doesn't exist (migration)
+          this.db!.run('ALTER TABLE nonces ADD COLUMN split_payment_data TEXT', (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+              console.warn('Migration warning (expected if column exists):', err.message);
+            } else {
+              console.log('Added split_payment_data column for split payments');
+            }
+            resolve();
+          });
         });
       });
     });
@@ -152,10 +176,12 @@ export class NonceDatabase {
     return new Promise((resolve, reject) => {
       const sql = `
         INSERT INTO nonces (
-          nonce, client_public_key, amount, recipient, 
-          resource_id, resource_url, timestamp, expiry
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          nonce, client_public_key, amount, recipient,
+          resource_id, resource_url, timestamp, expiry, split_payment_data
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
+
+      const splitPaymentJson = nonceData.splitPaymentData ? JSON.stringify(nonceData.splitPaymentData) : null;
 
       this.db!.run(
         sql,
@@ -168,6 +194,7 @@ export class NonceDatabase {
           nonceData.resourceUrl,
           nonceData.timestamp,
           nonceData.expiry,
+          splitPaymentJson,
         ],
         function (err) {
           if (err) {
@@ -264,6 +291,16 @@ export class NonceDatabase {
           return;
         }
 
+        // Parse split payment data if it exists
+        let splitPaymentData: SplitPaymentData | undefined;
+        if (row.split_payment_data) {
+          try {
+            splitPaymentData = JSON.parse(row.split_payment_data);
+          } catch (err) {
+            console.warn('Failed to parse split payment data:', err);
+          }
+        }
+
         resolve({
           nonce: row.nonce,
           clientPublicKey: row.client_public_key,
@@ -276,6 +313,7 @@ export class NonceDatabase {
           usedAt: row.used_at,
           transactionSignature: row.transaction_signature,
           createdAt: row.created_at,
+          splitPaymentData,
         });
       });
     });
