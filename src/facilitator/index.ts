@@ -155,19 +155,19 @@ app.post(
 
 // Minimal x402 test endpoint for validation debugging
 app.get('/minimal-test', (_req, res) => {
-  // Return absolute minimal x402 response with all fields as strings
+  // Return minimal x402 response matching exact schema types
   const minimalResponse = {
     x402Version: 1,
     error: 'Payment Required',
     accepts: [{
-      scheme: 'exact',
-      network: 'base',
+      scheme: 'exact' as const,
+      network: 'base' as const,
       maxAmountRequired: '1000000',
       resource: '/minimal-test',
       description: 'Minimal test payment',
       mimeType: 'application/json',
       payTo: 'BjbMd9zdg1k9ziSjkWMSq3cZwQVTMZxuC7uFPtBGrMKE',
-      maxTimeoutSeconds: '300',
+      maxTimeoutSeconds: 300,
       asset: 'SOL'
     }]
   };
