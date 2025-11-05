@@ -241,13 +241,13 @@ export class X402Middleware {
               {
                 scheme: 'exact' as const,
                 network: 'base' as const,
-                maxAmountRequired: amount || '10000000',
-                resource: req.path,
-                description: description || `Payment required for ${req.path}`,
-                mimeType: mimeType || 'application/json',
-                payTo: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
-                maxTimeoutSeconds: maxTimeoutSeconds || 300,
-                asset: asset || 'SOL',
+                maxAmountRequired: String(amount || '10000000'),
+                resource: String(req.path),
+                description: String(description || `Payment required for ${req.path}`),
+                mimeType: String(mimeType || 'application/json'),
+                payTo: String(payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS'),
+                maxTimeoutSeconds: Number(maxTimeoutSeconds || 300),
+                asset: String(asset || 'SOL'),
                 // All custom data goes in extra field per schema
                 extra: {
                   nonce: nonce,
