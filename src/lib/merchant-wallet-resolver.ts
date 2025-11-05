@@ -4,6 +4,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
+import { createX402MiddlewareWithUtils } from './x402-middleware.js';
 
 export interface MerchantWalletInfo {
   address: string;
@@ -90,8 +91,7 @@ export function createDynamicX402Middleware(config: {
   retryAttempts?: number;
 }, fallbackAddress?: string) {
 
-  // Import the existing middleware function
-  const { createX402MiddlewareWithUtils } = require('./x402-middleware.js');
+  // Use the imported middleware function
 
   return (req: Request, res: Response, next: NextFunction): void => {
     // Resolve merchant wallet dynamically
