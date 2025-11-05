@@ -36,16 +36,14 @@ app.use(cors({
     'https://tankbank.app',
     'https://api.tankbank.app',
     'https://facilitator.tankbank.app',
-    // Allow localhost for development
-    ...(process.env.NODE_ENV === 'development' ? [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:8080'
-    ] : [])
+    // Allow localhost for development and testing
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8080'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Payment']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Payment', 'X-Developer-Wallet']
 }));
 
 // Rate limiting middleware
@@ -408,6 +406,95 @@ app.get('/api/tier/:tier', tierMw.middleware, (req, res) => {
       },
     })
   );
+});
+
+// ============================================================================
+// DIRECTIONAL PAD DEMO ENDPOINTS
+// ============================================================================
+
+// Directional action endpoints with different price points
+const directionPrices = {
+  up: '1000000',      // 0.001 SOL
+  left: '5000000',    // 0.005 SOL
+  center: '10000000', // 0.01 SOL
+  right: '20000000',  // 0.02 SOL
+  down: '50000000'    // 0.05 SOL
+};
+
+const directionActions = {
+  up: 'Move Up - Basic navigation action',
+  left: 'Move Left - Side movement with enhanced features',
+  center: 'Center Action - Premium content unlock',
+  right: 'Move Right - Advanced navigation with bonuses',
+  down: 'Move Down - Elite action with maximum rewards'
+};
+
+// Create middleware for each direction
+Object.keys(directionPrices).forEach(direction => {
+  const middlewareConfig = createX402MiddlewareWithUtils(
+    {
+      amount: directionPrices[direction],
+      payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
+      developerWallet: process.env.DEVELOPER_WALLET_ADDRESS || undefined,
+      asset: 'SOL',
+      network: 'base',
+      description: directionActions[direction],
+      mimeType: 'application/json',
+      maxTimeoutSeconds: 300,
+      outputSchema: {
+        input: {
+          type: 'http',
+          method: 'GET'
+        },
+        output: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                action: { type: 'string' },
+                direction: { type: 'string' },
+                cost: { type: 'string' },
+                timestamp: { type: 'string', format: 'date-time' },
+                payment: { type: 'object' }
+              }
+            }
+          }
+        }
+      },
+      extra: {
+        category: 'directional-demo',
+        provider: 'Tank Bank x402',
+        demoVersion: '1.0',
+        priceSOL: (parseInt(directionPrices[direction]) / 1_000_000_000).toString()
+      }
+    },
+    {
+      facilitatorUrl: context.config.facilitatorUrl,
+      timeout: REQUEST_TIMEOUT,
+      retryAttempts: RETRY_ATTEMPTS,
+    }
+  );
+
+  app.get(`/api/directional-action/${direction}`, gamingRateLimit, middlewareConfig.middleware, (req, res) => {
+    const payment = req.payment;
+    const costSOL = parseInt(directionPrices[direction]) / 1_000_000_000;
+
+    res.json(
+      successResponse({
+        message: `${direction.toUpperCase()} action executed successfully!`,
+        data: {
+          action: directionActions[direction],
+          direction: direction,
+          cost: `${costSOL} SOL`,
+          timestamp: new Date().toISOString(),
+          payment: payment,
+          result: `Successfully performed ${direction} action with live mainnet payment!`
+        },
+      })
+    );
+  });
 });
 
 // Stats endpoint - public
