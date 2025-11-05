@@ -45,6 +45,38 @@ export interface FieldDef {
   properties?: Record<string, FieldDef>;
 }
 
+// Official x402 schema types
+export interface X402Response {
+  x402Version: number;
+  error?: string;
+  accepts?: Array<Accepts>;
+  payer?: string;
+}
+
+export interface Accepts {
+  scheme: "exact";
+  network: "base";
+  maxAmountRequired: string;
+  resource: string;
+  description: string;
+  mimeType: string;
+  payTo: string;
+  maxTimeoutSeconds: number;
+  asset: string;
+  outputSchema?: {
+    input: {
+      type: "http";
+      method: "GET" | "POST";
+      bodyType?: "json" | "form-data" | "multipart-form-data" | "text" | "binary";
+      queryParams?: Record<string, FieldDef>;
+      bodyFields?: Record<string, FieldDef>;
+      headerFields?: Record<string, FieldDef>;
+    };
+    output?: Record<string, any>;
+  };
+  extra?: Record<string, any>;
+}
+
 export interface PaymentInfo {
   verified: boolean;
   nonce: string;
@@ -201,14 +233,14 @@ export class X402Middleware {
             // Continue anyway - facilitator might handle nonce generation differently
           }
 
-          // Return HTTP 402 Payment Required with split payment schema
-          res.status(402).json({
+          // Return HTTP 402 Payment Required - strict schema compliance
+          const x402Response: X402Response = {
             x402Version: 1,
             error: 'Payment Required',
             accepts: [
               {
-                scheme: 'exact',
-                network: network || 'base',
+                scheme: 'exact' as const,
+                network: 'base' as const,
                 maxAmountRequired: amount || '10000000',
                 resource: req.path,
                 description: description || `Payment required for ${req.path}`,
@@ -216,35 +248,42 @@ export class X402Middleware {
                 payTo: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
                 maxTimeoutSeconds: maxTimeoutSeconds || 300,
                 asset: asset || 'SOL',
-                nonce: nonce,
-                timestamp: timestamp,
-                expiry: expiry,
-                // Split payment information
-                splitPayment: activeDeveloperWallet ? {
-                  enabled: true,
-                  totalAmount: totalAmount,
-                  recipients: [
-                    {
-                      address: activeDeveloperWallet,
-                      amount: developerAmount,
-                      percentage: 60,
-                      description: 'Developer revenue share'
-                    },
-                    {
-                      address: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
-                      amount: tankBankAmount,
-                      percentage: 40,
-                      description: 'Tank Bank service fee'
-                    }
-                  ]
-                } : {
-                  enabled: false
+                // All custom data goes in extra field per schema
+                extra: {
+                  nonce: nonce,
+                  timestamp: timestamp,
+                  expiry: expiry,
+                  // Split payment information in extra
+                  splitPayment: activeDeveloperWallet ? {
+                    enabled: true,
+                    totalAmount: totalAmount,
+                    recipients: [
+                      {
+                        address: activeDeveloperWallet,
+                        amount: developerAmount,
+                        percentage: 60,
+                        description: 'Developer revenue share'
+                      },
+                      {
+                        address: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
+                        amount: tankBankAmount,
+                        percentage: 40,
+                        description: 'Tank Bank service fee'
+                      }
+                    ]
+                  } : {
+                    enabled: false
+                  },
+                  // Merge any additional extra data
+                  ...(extra || {})
                 },
-                ...(outputSchema && { outputSchema }),
-                ...(extra && { extra })
-              },
-            ],
-          });
+                // Add outputSchema if provided
+                ...(outputSchema && { outputSchema })
+              }
+            ]
+          };
+
+          res.status(402).json(x402Response);
           return;
         }
 
