@@ -93,9 +93,8 @@ app.get('/', (_req, res) => {
       stats: '/stats'
     },
     integration: {
-      example: 'Merchants receive their product price + Tank Bank processes $0.0125 USDC fee',
-      model: 'Product price (to merchant) + $0.0125 USDC (to Tank Bank)',
-      currentMerchantWallet: process.env.MERCHANT_SOLANA_ADDRESS || 'Not configured'
+      model: 'Product price (to merchant) + $0.0125 USDC processing fee (to Tank Bank)',
+      description: 'Merchants set product prices, Tank Bank handles payment processing'
     }
   });
 });
