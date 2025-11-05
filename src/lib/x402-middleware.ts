@@ -233,7 +233,7 @@ export class X402Middleware {
             // Continue anyway - facilitator might handle nonce generation differently
           }
 
-          // Return HTTP 402 Payment Required - strict schema compliance
+          // Return HTTP 402 Payment Required - minimal schema compliance
           const x402Response: X402Response = {
             x402Version: 1,
             error: 'Payment Required',
@@ -247,38 +247,8 @@ export class X402Middleware {
                 mimeType: String(mimeType || 'application/json'),
                 payTo: String(payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS'),
                 maxTimeoutSeconds: Number(maxTimeoutSeconds || 300),
-                asset: String(asset || 'SOL'),
-                // All custom data goes in extra field per schema
-                extra: {
-                  nonce: nonce,
-                  timestamp: timestamp,
-                  expiry: expiry,
-                  // Split payment information in extra
-                  splitPayment: activeDeveloperWallet ? {
-                    enabled: true,
-                    totalAmount: totalAmount,
-                    recipients: [
-                      {
-                        address: activeDeveloperWallet,
-                        amount: developerAmount,
-                        percentage: 60,
-                        description: 'Developer revenue share'
-                      },
-                      {
-                        address: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
-                        amount: tankBankAmount,
-                        percentage: 40,
-                        description: 'Tank Bank service fee'
-                      }
-                    ]
-                  } : {
-                    enabled: false
-                  },
-                  // Merge any additional extra data
-                  ...(extra || {})
-                },
-                // Add outputSchema if provided
-                ...(outputSchema && { outputSchema })
+                asset: String(asset || 'SOL')
+                // Remove extra and outputSchema temporarily to test minimal response
               }
             ]
           };
