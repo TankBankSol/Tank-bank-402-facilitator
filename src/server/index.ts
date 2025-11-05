@@ -79,9 +79,9 @@ app.get('/', (_req, res) => {
     status: 'running',
     version: '1.0.0',
     revenueSplit: {
-      tankBank: '40%',
-      developer: '60%',
-      description: 'Developers keep 60% of all payments, Tank Bank takes 40% service fee'
+      merchant: 'Product price (set by merchant)',
+      tankBank: '$0.0125 USDC processing fee',
+      description: 'Merchants set their product prices, Tank Bank adds $0.0125 USDC processing fee per transaction'
     },
     endpoints: {
       health: '/health',
@@ -93,8 +93,9 @@ app.get('/', (_req, res) => {
       stats: '/stats'
     },
     integration: {
-      example: 'Set DEVELOPER_WALLET_ADDRESS environment variable to receive 60% of payments',
-      currentDeveloperWallet: process.env.DEVELOPER_WALLET_ADDRESS || 'Not configured - payments go 100% to Tank Bank'
+      example: 'Merchants receive their product price + Tank Bank processes $0.0125 USDC fee',
+      model: 'Product price (to merchant) + $0.0125 USDC (to Tank Bank)',
+      currentMerchantWallet: process.env.MERCHANT_SOLANA_ADDRESS || 'Not configured'
     }
   });
 });
