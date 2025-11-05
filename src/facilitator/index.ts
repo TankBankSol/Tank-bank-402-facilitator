@@ -155,7 +155,7 @@ app.post(
 
 // Minimal x402 test endpoint for validation debugging
 app.get('/minimal-test', (_req, res) => {
-  // Return absolute minimal x402 response
+  // Return absolute minimal x402 response with all fields as strings
   const minimalResponse = {
     x402Version: 1,
     error: 'Payment Required',
@@ -167,7 +167,7 @@ app.get('/minimal-test', (_req, res) => {
       description: 'Minimal test payment',
       mimeType: 'application/json',
       payTo: 'BjbMd9zdg1k9ziSjkWMSq3cZwQVTMZxuC7uFPtBGrMKE',
-      maxTimeoutSeconds: 300,
+      maxTimeoutSeconds: '300',
       asset: 'SOL'
     }]
   };
