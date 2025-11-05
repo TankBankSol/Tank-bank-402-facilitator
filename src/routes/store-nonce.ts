@@ -47,10 +47,6 @@ export function storeNonceRoute(context: StoreNonceContext) {
         splitPaymentData: splitPayment
       });
 
-      console.log(`🔗 Nonce stored: ${nonce} for ${amount} lamports`);
-      if (splitPayment?.enabled) {
-        console.log(`   Split payment: ${splitPayment.recipients.length} recipients`);
-      }
 
       res.json({
         status: 'success',

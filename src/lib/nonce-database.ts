@@ -84,18 +84,6 @@ export class NonceDatabase {
 
         this.createTables()
           .then(() => {
-            console.log('Nonce database initialized successfully');
-            // Verify the table structure
-            this.db!.all('PRAGMA table_info(nonces)', (err, columns) => {
-              if (err) {
-                console.error('Error checking table structure:', err);
-              } else {
-                console.log(
-                  'Table columns:',
-                  (columns as any[]).map((col) => col.name)
-                );
-              }
-            });
             resolve();
           })
           .catch(reject);
@@ -145,7 +133,6 @@ export class NonceDatabase {
             reject(new DatabaseError(`Failed to create nonces table: ${err.message}`));
             return;
           }
-          console.log('Created nonces table with resource_url column');
         });
 
         this.db!.run(createTransactionsTable, (err) => {
@@ -153,14 +140,11 @@ export class NonceDatabase {
             reject(new DatabaseError(`Failed to create transactions table: ${err.message}`));
             return;
           }
-          console.log('Created transactions table');
 
           // Add split_payment_data column if it doesn't exist (migration)
           this.db!.run('ALTER TABLE nonces ADD COLUMN split_payment_data TEXT', (err) => {
             if (err && !err.message.includes('duplicate column name')) {
               console.warn('Migration warning (expected if column exists):', err.message);
-            } else {
-              console.log('Added split_payment_data column for split payments');
             }
             resolve();
           });
@@ -363,7 +347,6 @@ export class NonceDatabase {
           return;
         }
 
-        console.log(`Cleaned up ${this.changes} expired nonces`);
         resolve(this.changes);
       });
     });
@@ -466,7 +449,6 @@ export class NonceDatabase {
           if (err) {
             reject(new DatabaseError(`Failed to close database: ${err.message}`));
           } else {
-            console.log('Database connection closed');
             resolve();
           }
         });

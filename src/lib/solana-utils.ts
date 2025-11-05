@@ -185,11 +185,6 @@ export class SolanaUtils {
    */
   async submitSponsoredTransaction(facilitatorPrivateKey: string, serializedTransaction: string): Promise<string> {
     try {
-      console.log('TRUE x402 ATOMIC SETTLEMENT: Sponsored Transaction');
-      console.log('  Client has signed transaction (their SOL will move)');
-      console.log('  Facilitator will add signature as fee payer (pays gas)');
-      console.log();
-
       // Import @solana/web3.js for transaction handling
       const { Connection, Transaction, Keypair } = await import('@solana/web3.js');
 
@@ -199,30 +194,12 @@ export class SolanaUtils {
       const secretKey = bs58.decode(facilitatorPrivateKey);
       const facilitatorKeypair = Keypair.fromSecretKey(secretKey);
 
-      console.log('  Facilitator (fee payer):', facilitatorKeypair.publicKey.toString());
-
       // Deserialize the transaction
       const transactionBuffer = Buffer.from(serializedTransaction, 'base64');
       const transaction = Transaction.from(transactionBuffer);
 
-      console.log('  Transaction details:');
-      console.log('     - Instructions:', transaction.instructions.length);
-      console.log('     - Client signature:', transaction.signatures[0] ? 'Present' : 'Missing');
-      console.log();
-      console.log('  How TRUE x402 works:');
-      console.log('     - Client signs: Authorizes their SOL to move');
-      console.log('     - Facilitator signs: Pays gas fee (sponsored transaction)');
-      console.log('     - Single atomic transaction on-chain');
-      console.log("     - Client's funds -> Merchant (instant settlement)");
-      console.log();
-
-      console.log('  Facilitator signing as fee payer and sending to Solana devnet...');
-
       // Add facilitator's signature (fee payer) to the already client-signed transaction
       transaction.partialSign(facilitatorKeypair);
-
-      console.log('  Both signatures present (client + facilitator)');
-      console.log('  Sending to Solana network...');
 
       // Send the transaction (all signatures are already in place)
       const rawTransaction = transaction.serialize();
@@ -234,15 +211,8 @@ export class SolanaUtils {
       // Wait for confirmation
       await connection.confirmTransaction(signature, 'confirmed');
 
-      console.log('  ATOMIC SETTLEMENT COMPLETE!');
-      console.log('     Signature:', signature);
-      console.log('     Explorer:', `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
-      console.log();
-      console.log("  Client's SOL moved to merchant, facilitator paid gas!");
-
       return signature;
     } catch (error) {
-      console.error('  Sponsored transaction error:', error);
       throw new Error(
         `Failed to submit sponsored transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
       );

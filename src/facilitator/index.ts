@@ -44,8 +44,7 @@ app.use(cors({
     'https://facilitator.tankbank.app',
     // Allow localhost for development and testing
     'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:8080'
+    'http://localhost:3001'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],

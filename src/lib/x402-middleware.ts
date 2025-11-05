@@ -173,7 +173,6 @@ export class X402Middleware {
             payTo,
             developerWallet,
             asset,
-            network,
             description,
             mimeType,
             maxTimeoutSeconds,

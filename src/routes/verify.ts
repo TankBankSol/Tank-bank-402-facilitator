@@ -60,7 +60,6 @@ export function verifyPaymentRoute(context: VerifyRouteContext) {
       );
 
       if (!isValidSignature) {
-        console.log('Payment verification failed: Invalid signature');
         return res.json({ isValid: false, error: 'Invalid signature' });
       }
 
@@ -96,7 +95,6 @@ export function verifyPaymentRoute(context: VerifyRouteContext) {
       }
 
       // 4. Return {"isValid": true}
-      console.log('Payment verification successful');
       return res.json({ isValid: true });
     } catch (error) {
       console.error('Payment verification error:', error instanceof Error ? error.message : 'Unknown error');

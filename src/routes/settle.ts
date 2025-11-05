@@ -58,28 +58,9 @@ export function settlePaymentRoute(context: SettleRouteContext) {
         return res.json({ status: 'error', error: 'Nonce has expired' });
       }
 
-      console.log('Starting Solana on-chain payment settlement...');
-      console.log('Payment details:', {
-        nonce: nonce,
-        amount: nonceDetails.amount,
-        clientPublicKey: nonceDetails.clientPublicKey,
-        recipient: nonceDetails.recipient,
-        splitPayment: nonceDetails.splitPaymentData?.enabled || false,
-      });
-
       // Check for split payment configuration
       if (nonceDetails.splitPaymentData?.enabled) {
-        console.log('🔀 SPLIT PAYMENT DETECTED:');
-        console.log('   Total Amount:', nonceDetails.splitPaymentData.totalAmount, 'lamports');
-        nonceDetails.splitPaymentData.recipients.forEach((recipient, index) => {
-          console.log(`   Recipient ${index + 1}:`, {
-            address: recipient.address,
-            amount: recipient.amount,
-            percentage: `${recipient.percentage}%`,
-            description: recipient.description
-          });
-        });
-        console.log('   Transaction will be atomic (single transaction, multiple recipients)');
+        // Split payment processing
       }
 
       // Payment setup validated and ready for settlement
@@ -91,12 +72,7 @@ export function settlePaymentRoute(context: SettleRouteContext) {
         const clientPublicKey = paymentReq.clientPublicKey;
         const clientBalance = await context.solanaUtils.getSOLBalance(clientPublicKey);
 
-        console.log('SOL Balance check:', {
-          clientPublicKey: clientPublicKey,
-          clientBalance: clientBalance.toString(),
-          requiredAmount: requiredAmount.toString(),
-          sufficient: clientBalance >= requiredAmount,
-        });
+        // Balance validation
 
         if (clientBalance < requiredAmount) {
           return res.json({
@@ -112,8 +88,7 @@ export function settlePaymentRoute(context: SettleRouteContext) {
       let transactionSignature: string;
       if (context.simulateTransactions) {
         transactionSignature = 'x402-demo-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
-        console.log('Simulated transaction created');
-        console.log('Transaction confirmed on-chain (simulated):', transactionSignature);
+        // Simulated transaction created
       } else {
         // TRUE x402 ATOMIC SETTLEMENT (Sponsored Transaction)
         // Client must sign the transaction - their funds move instantly (instant finality)
@@ -130,10 +105,7 @@ export function settlePaymentRoute(context: SettleRouteContext) {
             context.config.facilitatorPrivateKey, // facilitator private key (fee payer)
             paymentReq.signedTransaction // client-signed transaction
           );
-          console.log('ATOMIC SETTLEMENT complete!');
-          console.log(
-            `   View on Solana Explorer: https://explorer.solana.com/tx/${transactionSignature}${context.config?.solanaNetwork === 'mainnet-beta' ? '' : '?cluster=' + context.config?.solanaNetwork}`
-          );
+          // Settlement completed
         } catch (error) {
           console.error('Sponsored transaction failed:', error);
           throw new Error(
@@ -144,8 +116,8 @@ export function settlePaymentRoute(context: SettleRouteContext) {
 
       // Verify the transfer worked by checking balances
       if (!context.simulateTransactions) {
-        const recipientBalance = await context.solanaUtils.getSOLBalance(nonceDetails.recipient);
-        console.log(` Transfer completed! Recipient balance: ${recipientBalance.toString()} lamports`);
+        await context.solanaUtils.getSOLBalance(nonceDetails.recipient);
+        // Transfer verification completed
       }
 
       // 3. Record the Transaction Signature in the database

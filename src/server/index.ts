@@ -38,8 +38,7 @@ app.use(cors({
     'https://facilitator.tankbank.app',
     // Allow localhost for development and testing
     'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:8080'
+    'http://localhost:3001'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -132,17 +131,14 @@ app.get('/public', (_req, res) => {
 // PROTECTED ENDPOINTS (x402 Payment Required)
 // ============================================================================
 
-// Premium data endpoint - 0.0001 SOL with split payment
-// NOTE: In production, developers would set their own developerWallet address
+// Premium data endpoint - 0.0125 USDC payment to Tank Bank
 const premiumRouteMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.PREMIUM_DATA,
     payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
-    // Developers replace this with their own wallet address for 60% revenue share
-    developerWallet: process.env.DEVELOPER_WALLET_ADDRESS || undefined,
-    asset: 'SOL',
+    asset: 'USDC',
     network: context.config.solanaNetwork === 'devnet' ? 'base' : 'base',
-    description: 'Premium data access - Developer gets 60%, Tank Bank gets 40%',
+    description: 'Premium data access - Full payment to Tank Bank',
     mimeType: 'application/json',
     maxTimeoutSeconds: 300,
     outputSchema: {
@@ -204,7 +200,7 @@ const generateContentMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.GENERATE_CONTENT,
     payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
-    asset: 'SOL',
+    asset: 'USDC',
     network: 'base',
     description: 'AI-powered content generation service with custom prompts',
     mimeType: 'application/json',
@@ -278,7 +274,7 @@ const downloadMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.DOWNLOAD_FILE,
     payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
-    asset: 'SOL',
+    asset: 'USDC',
     network: 'base',
     description: 'Secure file download with time-limited access tokens',
     mimeType: 'application/json',
@@ -346,7 +342,7 @@ const tierMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.TIER_ACCESS,
     payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
-    asset: 'SOL',
+    asset: 'USDC',
     network: 'base',
     description: 'Premium tier access with enhanced features and capabilities',
     mimeType: 'application/json',
@@ -436,7 +432,7 @@ Object.keys(directionPrices).forEach(direction => {
       amount: directionPrices[direction],
       payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
       developerWallet: process.env.DEVELOPER_WALLET_ADDRESS || undefined,
-      asset: 'SOL',
+      asset: 'USDC',
       network: 'base',
       description: directionActions[direction],
       mimeType: 'application/json',
@@ -511,27 +507,6 @@ app.get('/stats', async (_req, res) => {
   }
 });
 
-// Minimal x402 test endpoint for validation debugging
-app.get('/minimal-test', (_req, res) => {
-  // Return absolute minimal x402 response
-  const minimalResponse = {
-    x402Version: 1,
-    error: 'Payment Required',
-    accepts: [{
-      scheme: 'exact',
-      network: 'base',
-      maxAmountRequired: '1000000',
-      resource: '/minimal-test',
-      description: 'Minimal test payment',
-      mimeType: 'application/json',
-      payTo: 'BjbMd9zdg1k9ziSjkWMSq3cZwQVTMZxuC7uFPtBGrMKE',
-      maxTimeoutSeconds: 300,
-      asset: 'SOL'
-    }]
-  };
-
-  res.status(402).json(minimalResponse);
-});
 
 // 404 handler
 app.use((_req, res) => {

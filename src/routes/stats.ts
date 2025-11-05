@@ -33,7 +33,6 @@ export function cleanupNoncesRoute(context: StatsRouteContext) {
   return async (_req: Request, res: Response) => {
     try {
       const cleaned = await context.nonceDb.cleanupExpiredNonces();
-      console.log(`Cleaned up ${cleaned} expired nonces`);
       res.json(successResponse({ cleaned }));
     } catch (error) {
       res

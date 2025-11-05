@@ -20,12 +20,14 @@ export const CLEANUP_INTERVAL_HOURS = Number(process.env.CLEANUP_INTERVAL_HOURS)
 export const CLEANUP_INTERVAL_MS = CLEANUP_INTERVAL_HOURS * 60 * 60 * 1000;
 
 /**
- * Payment Tier Amounts (in lamports)
- * Default values can be overridden via environment variables
+ * Payment Tier Amounts (in micro USDC - 6 decimals)
+ * Example: 1000000 = 1 USDC
+ * Using store pricing: customer pays store price + Tank Bank fee
  */
+export const TANK_BANK_FEE_USDC = '12500'; // 0.0125 USDC Tank Bank fee
 export const PAYMENT_AMOUNTS = {
-  PREMIUM_DATA: process.env.PREMIUM_DATA_AMOUNT || '10000000', // 0.01 SOL
-  GENERATE_CONTENT: process.env.GENERATE_CONTENT_AMOUNT || '5000000', // 0.005 SOL
-  DOWNLOAD_FILE: process.env.DOWNLOAD_FILE_AMOUNT || '20000000', // 0.02 SOL
-  TIER_ACCESS: process.env.TIER_ACCESS_AMOUNT || '50000000', // 0.05 SOL
+  PREMIUM_DATA: '25000', // 0.025 USDC (store gets 0.0125 + Tank Bank gets 0.0125)
+  GENERATE_CONTENT: '18750', // 0.01875 USDC (store gets 0.00625 + Tank Bank gets 0.0125)
+  DOWNLOAD_FILE: '37500', // 0.0375 USDC (store gets 0.025 + Tank Bank gets 0.0125)
+  TIER_ACCESS: '75000', // 0.075 USDC (store gets 0.0625 + Tank Bank gets 0.0125)
 };
