@@ -42,12 +42,10 @@ app.use(cors({
     'https://tankbank.app',
     'https://api.tankbank.app',
     'https://facilitator.tankbank.app',
-    // Allow localhost for development
-    ...(process.env.NODE_ENV === 'development' ? [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:8080'
-    ] : [])
+    // Allow localhost for development and testing
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8080'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
