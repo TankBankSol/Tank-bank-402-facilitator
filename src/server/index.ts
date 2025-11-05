@@ -10,6 +10,11 @@ import { getServerContext } from '../lib/get-server-context.js';
 import { createX402MiddlewareWithUtils } from '../lib/x402-middleware.js';
 import { successResponse, errorResponse } from '../lib/api-response-helpers.js';
 import {
+  merchantWalletMiddleware,
+  createDynamicX402Middleware,
+  getMerchantWallet
+} from '../lib/merchant-wallet-resolver.js';
+import {
   REQUEST_TIMEOUT,
   RETRY_ATTEMPTS,
   REQUEST_BODY_LIMIT,
@@ -52,6 +57,9 @@ app.use(generalRateLimit);
 app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true }));
 
+// Merchant wallet resolution middleware
+app.use(merchantWalletMiddleware(context.config.facilitatorPublicKey));
+
 // Request logging
 app.use((req, _res, next) => {
   context.log.info(`${req.method} ${req.path}`);
@@ -86,6 +94,7 @@ app.get('/', (_req, res) => {
     endpoints: {
       health: '/health',
       public: '/public',
+      'merchant-wallet': '/merchant-wallet',
       'premium-data': '/api/premium-data',
       'generate-content': '/api/generate-content',
       'download': '/api/download/:fileId',
@@ -94,7 +103,13 @@ app.get('/', (_req, res) => {
     },
     integration: {
       model: 'Product price (to merchant) + $0.0125 USDC processing fee (to Tank Bank)',
-      description: 'Merchants set product prices, Tank Bank handles payment processing'
+      description: 'Merchants set product prices, Tank Bank handles payment processing',
+      merchantConfiguration: {
+        header: 'Send X-Developer-Wallet header with your Solana wallet address',
+        environment: 'Set MERCHANT_SOLANA_ADDRESS environment variable (server-wide)',
+        priority: 'Header overrides environment variable',
+        endpoint: '/merchant-wallet (shows current configuration)'
+      }
     }
   });
 });
@@ -127,18 +142,38 @@ app.get('/public', (_req, res) => {
   );
 });
 
+// Merchant wallet info endpoint (shows current wallet configuration)
+app.get('/merchant-wallet', (req, res) => {
+  const walletInfo = req.merchantWallet;
+  res.json(
+    successResponse({
+      message: 'Current merchant wallet configuration',
+      wallet: {
+        address: walletInfo?.address || 'Not configured',
+        source: walletInfo?.source || 'unknown',
+        fallbackUsed: walletInfo?.fallbackUsed || true
+      },
+      configuration: {
+        headerName: 'X-Developer-Wallet',
+        envVariable: 'MERCHANT_SOLANA_ADDRESS',
+        priority: 'Header > Environment > Default'
+      },
+      timestamp: new Date().toISOString(),
+    })
+  );
+});
+
 // ============================================================================
 // PROTECTED ENDPOINTS (x402 Payment Required)
 // ============================================================================
 
-// Premium data endpoint - 0.0125 USDC payment to Tank Bank
-const premiumRouteMw = createX402MiddlewareWithUtils(
+// Premium data endpoint - uses dynamic merchant wallet resolution
+const premiumRouteMw = createDynamicX402Middleware(
   {
     amount: PAYMENT_AMOUNTS.PREMIUM_DATA,
-    payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
     asset: 'USDC',
     network: context.config.solanaNetwork === 'devnet' ? 'base' : 'base',
-    description: 'Premium data access - Full payment to Tank Bank',
+    description: 'Premium data access - Payment to merchant wallet',
     mimeType: 'application/json',
     maxTimeoutSeconds: 300,
     outputSchema: {
@@ -166,16 +201,15 @@ const premiumRouteMw = createX402MiddlewareWithUtils(
       category: 'premium-content',
       provider: 'Tank Bank x402',
       apiVersion: '1.0'
-    }
-  },
-  {
+    },
     facilitatorUrl: context.config.facilitatorUrl,
     timeout: REQUEST_TIMEOUT,
     retryAttempts: RETRY_ATTEMPTS,
-  }
+  },
+  context.config.facilitatorPublicKey
 );
 
-app.get('/api/premium-data', gamingRateLimit, premiumRouteMw.middleware, (req, res) => {
+app.get('/api/premium-data', gamingRateLimit, premiumRouteMw, (req, res) => {
   res.set({
     'x-payment-processed': 'true',
     'x-payment-method': 'solana-sol',
