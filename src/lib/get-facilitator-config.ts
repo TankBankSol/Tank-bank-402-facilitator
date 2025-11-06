@@ -10,7 +10,7 @@ const FacilitatorConfigSchema = z.object({
   port: z.coerce.number().int().positive(),
   facilitatorPrivateKey: z.string().min(1, 'FACILITATOR_PRIVATE_KEY is required'),
   facilitatorPublicKey: z.string().optional(),
-  tankBankWallet: z.string().min(1, 'TANK_BANK_WALLET is required for revenue collection'),
+  tankBankWallet: z.string().optional(),
   solanaRpcUrl: z.string().url(),
   solanaWsUrl: z.string().url().optional(),
   databasePath: z.string(),
