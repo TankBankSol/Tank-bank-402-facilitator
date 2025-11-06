@@ -5,7 +5,7 @@
 
 import express, { type Express } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+// import helmet from 'helmet';
 import { getFacilitatorContext } from '../lib/get-facilitator-context.js';
 import {
   healthCheckRoute,
@@ -32,7 +32,7 @@ const context = await getFacilitatorContext();
 const app: Express = express();
 
 // Setup middleware
-app.use(helmet());
+// app.use(helmet());
 
 // Trust proxy for rate limiting (required for Render)
 app.set('trust proxy', 1);
