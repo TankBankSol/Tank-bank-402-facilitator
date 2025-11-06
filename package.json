@@ -18,6 +18,7 @@
     "clean": "rm -rf dist",
     "dev": "tsx watch src/facilitator/index.ts",
     "start": "node dist/facilitator/index.js",
+    "start:facilitator": "node dist/facilitator/index.js",
     "lint": "eslint src --ext .ts",
     "fmt": "prettier --write src",
     "fmt:check": "prettier --check src"
