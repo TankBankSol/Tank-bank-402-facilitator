@@ -4,7 +4,6 @@
  */
 
 import sqlite3 from 'sqlite3';
-import { DatabaseError, NonceError } from '../errors/index.js';
 
 export interface SplitPaymentRecipient {
   address: string;
@@ -78,7 +77,7 @@ export class NonceDatabase {
       this.db = new sqlite3.Database(this.dbPath, (err) => {
         if (err) {
           console.error('Error opening database:', err);
-          reject(new DatabaseError(`Failed to open database: ${err.message}`));
+          reject(new Error(`Failed to open database: ${err.message}`));
           return;
         }
 
@@ -130,14 +129,14 @@ export class NonceDatabase {
       this.db!.serialize(() => {
         this.db!.run(createNoncesTable, (err) => {
           if (err) {
-            reject(new DatabaseError(`Failed to create nonces table: ${err.message}`));
+            reject(new Error(`Failed to create nonces table: ${err.message}`));
             return;
           }
         });
 
         this.db!.run(createTransactionsTable, (err) => {
           if (err) {
-            reject(new DatabaseError(`Failed to create transactions table: ${err.message}`));
+            reject(new Error(`Failed to create transactions table: ${err.message}`));
             return;
           }
 
@@ -183,9 +182,9 @@ export class NonceDatabase {
         function (err) {
           if (err) {
             if (err.message.includes('UNIQUE constraint failed')) {
-              reject(new NonceError('Nonce already exists'));
+              reject(new Error('Nonce already exists'));
             } else {
-              reject(new DatabaseError(`Failed to store nonce: ${err.message}`));
+              reject(new Error(`Failed to store nonce: ${err.message}`));
             }
             return;
           }
@@ -208,7 +207,7 @@ export class NonceDatabase {
 
       this.db!.get(sql, [nonce], (err, row: any) => {
         if (err) {
-          reject(new DatabaseError(`Failed to check nonce: ${err.message}`));
+          reject(new Error(`Failed to check nonce: ${err.message}`));
           return;
         }
 
@@ -241,12 +240,12 @@ export class NonceDatabase {
 
       this.db!.run(sql, [Date.now(), transactionSignature, nonce], function (err) {
         if (err) {
-          reject(new DatabaseError(`Failed to mark nonce as used: ${err.message}`));
+          reject(new Error(`Failed to mark nonce as used: ${err.message}`));
           return;
         }
 
         if (this.changes === 0) {
-          reject(new NonceError('Nonce not found or already used'));
+          reject(new Error('Nonce not found or already used'));
           return;
         }
 
@@ -266,7 +265,7 @@ export class NonceDatabase {
 
       this.db!.get(sql, [nonce], (err, row: any) => {
         if (err) {
-          reject(new DatabaseError(`Failed to get nonce details: ${err.message}`));
+          reject(new Error(`Failed to get nonce details: ${err.message}`));
           return;
         }
 
@@ -316,12 +315,12 @@ export class NonceDatabase {
 
       this.db!.run(sql, [transactionSignature, nonce], function (err) {
         if (err) {
-          reject(new DatabaseError(`Failed to update transaction signature: ${err.message}`));
+          reject(new Error(`Failed to update transaction signature: ${err.message}`));
           return;
         }
 
         if (this.changes === 0) {
-          reject(new NonceError('Nonce not found'));
+          reject(new Error('Nonce not found'));
           return;
         }
 
@@ -343,7 +342,7 @@ export class NonceDatabase {
 
       this.db!.run(sql, [currentTime], function (err) {
         if (err) {
-          reject(new DatabaseError(`Failed to cleanup expired nonces: ${err.message}`));
+          reject(new Error(`Failed to cleanup expired nonces: ${err.message}`));
           return;
         }
 
@@ -370,7 +369,7 @@ export class NonceDatabase {
 
       this.db!.get(sql, [currentTime, currentTime], (err, row: any) => {
         if (err) {
-          reject(new DatabaseError(`Failed to get nonce stats: ${err.message}`));
+          reject(new Error(`Failed to get nonce stats: ${err.message}`));
           return;
         }
 
@@ -405,7 +404,7 @@ export class NonceDatabase {
         ],
         function (err) {
           if (err) {
-            reject(new DatabaseError(`Failed to store transaction: ${err.message}`));
+            reject(new Error(`Failed to store transaction: ${err.message}`));
             return;
           }
           resolve(this.lastID);
@@ -431,7 +430,7 @@ export class NonceDatabase {
 
       this.db!.run(sql, [status, errorMessage, transactionSignature], function (err) {
         if (err) {
-          reject(new DatabaseError(`Failed to update transaction status: ${err.message}`));
+          reject(new Error(`Failed to update transaction status: ${err.message}`));
           return;
         }
         resolve(this.changes);
@@ -447,7 +446,7 @@ export class NonceDatabase {
       if (this.db) {
         this.db.close((err) => {
           if (err) {
-            reject(new DatabaseError(`Failed to close database: ${err.message}`));
+            reject(new Error(`Failed to close database: ${err.message}`));
           } else {
             resolve();
           }

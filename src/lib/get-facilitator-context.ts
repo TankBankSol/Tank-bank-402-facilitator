@@ -9,11 +9,9 @@ import bs58 from 'bs58';
 import { SolanaUtils } from './solana-utils.js';
 import { NonceDatabase } from './nonce-database.js';
 import { FacilitatorConfig, getFacilitatorConfig } from './get-facilitator-config.js';
-import { ApiLogger, log } from './api-logger.js';
-
 export interface FacilitatorContext {
   config: FacilitatorConfig;
-  log: ApiLogger;
+  log: typeof console;
   facilitatorKeypair: KeyPairSigner;
   facilitatorAddress: Address;
   solanaUtils: SolanaUtils;
@@ -45,7 +43,7 @@ export async function getFacilitatorContext(): Promise<FacilitatorContext> {
 
   context = {
     config,
-    log,
+    log: console,
     facilitatorKeypair,
     facilitatorAddress,
     solanaUtils,

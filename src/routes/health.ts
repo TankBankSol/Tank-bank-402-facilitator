@@ -4,7 +4,6 @@
 
 import type { Request, Response } from 'express';
 import type { Address } from 'gill';
-import { successResponse } from '../lib/api-response-helpers.js';
 
 export interface HealthRouteContext {
   facilitatorAddress: Address;
@@ -16,12 +15,12 @@ export interface HealthRouteContext {
  */
 export function healthCheckRoute(context: HealthRouteContext) {
   return (_req: Request, res: Response) => {
-    res.json(
-      successResponse({
+    res.json({
+      data: {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         facilitator: context.facilitatorAddress.toString(),
-      })
-    );
+      }
+    });
   };
 }

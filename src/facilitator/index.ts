@@ -58,11 +58,6 @@ app.use(generalRateLimit);
 app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging
-app.use((req, _res, next) => {
-  context.log.info(`${req.method} ${req.path}`);
-  next();
-});
 
 // Setup routes
 // Root route

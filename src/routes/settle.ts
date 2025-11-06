@@ -60,7 +60,37 @@ export function settlePaymentRoute(context: SettleRouteContext) {
 
       // Check for split payment configuration
       if (nonceDetails.splitPaymentData?.enabled) {
-        // Split payment processing
+
+        // Validate that the total amount matches expected split payment total
+        const expectedTotal = Number(nonceDetails.splitPaymentData.totalAmount);
+        const actualAmount = Number(nonceDetails.amount);
+        if (actualAmount !== expectedTotal) {
+          return res.json({
+            status: 'error',
+            error: `Amount mismatch. Expected: ${expectedTotal}, Received: ${nonceDetails.amount}`
+          });
+        }
+
+        // Validate that Tank Bank fee is included and correct
+        const tankBankRecipient = nonceDetails.splitPaymentData.recipients.find(
+          (recipient: any) => recipient.description === 'Tank Bank processing fee'
+        );
+
+        if (!tankBankRecipient) {
+          return res.json({
+            status: 'error',
+            error: 'Tank Bank processing fee is required'
+          });
+        }
+
+        const expectedTankBankFee = parseInt(process.env.TANK_BANK_FEE_USDC || '12500');
+        const actualTankBankFee = Number(tankBankRecipient.amount);
+        if (actualTankBankFee !== expectedTankBankFee) {
+          return res.json({
+            status: 'error',
+            error: `Invalid Tank Bank fee. Expected: ${expectedTankBankFee}, Received: ${tankBankRecipient.amount}`
+          });
+        }
       }
 
       // Payment setup validated and ready for settlement
@@ -107,7 +137,6 @@ export function settlePaymentRoute(context: SettleRouteContext) {
           );
           // Settlement completed
         } catch (error) {
-          console.error('Sponsored transaction failed:', error);
           throw new Error(
             `Failed to submit sponsored transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
           );
@@ -133,7 +162,6 @@ export function settlePaymentRoute(context: SettleRouteContext) {
       // 4. Return {"status": "settled"}
       return res.json({ status: 'settled', transactionSignature: transactionSignature });
     } catch (error) {
-      console.error('Settlement error:', error);
 
       // Store failed transaction
       if (paymentReq && paymentReq.payload) {

@@ -3,7 +3,6 @@
  */
 
 import crypto from 'crypto';
-import { InvalidPaymentRequestError } from '../errors/index.js';
 
 export interface AuthorizationPayloadData {
   amount: string;
@@ -157,7 +156,7 @@ export class AuthorizationPayload {
       const data = JSON.parse(payloadString) as AuthorizationPayloadData;
       return new AuthorizationPayload(data);
     } catch (error) {
-      throw new InvalidPaymentRequestError('Invalid payload format');
+      throw new Error('Invalid payload format');
     }
   }
 
@@ -362,7 +361,7 @@ export class PaymentRequest {
         signedTransaction: data.signedTransaction as string | undefined,
       });
     } catch (error) {
-      throw new InvalidPaymentRequestError('Invalid payment request format');
+      throw new Error('Invalid payment request format');
     }
   }
 }

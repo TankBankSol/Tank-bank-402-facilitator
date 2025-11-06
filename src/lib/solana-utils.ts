@@ -5,7 +5,6 @@
 
 import { createSolanaRpc, createSolanaRpcSubscriptions, address } from 'gill';
 import type { Address } from 'gill';
-import { SignatureVerificationError } from '../errors/index.js';
 import nacl from 'tweetnacl';
 import bs58 from 'bs58';
 
@@ -118,7 +117,7 @@ export class SolanaUtils {
       return bs58.encode(signature);
     } catch (error) {
       console.error('Message signing error:', error);
-      throw new SignatureVerificationError(
+      throw new Error(
         `Failed to sign message: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -133,7 +132,7 @@ export class SolanaUtils {
       return this.signMessage(messageString, privateKeyBase58);
     } catch (error) {
       console.error('Structured data signing error:', error);
-      throw new SignatureVerificationError(
+      throw new Error(
         `Failed to sign structured data: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
@@ -173,6 +172,86 @@ export class SolanaUtils {
    */
   getRpcSubscriptions() {
     return this.rpcSubscriptions;
+  }
+
+  /**
+   * Create and submit split payment transaction (Tank Bank fee enforcement)
+   * Creates USDC transfer transaction with multiple recipients and has client sign it.
+   * @param facilitatorPrivateKey - Facilitator private key in base58 format
+   * @param clientPublicKey - Client's public key
+   * @param recipients - Array of payment recipients with amounts
+   * @param usdcMintAddress - USDC token mint address
+   * @returns Transaction signature
+   */
+  async createAndSubmitSplitPayment(
+    facilitatorPrivateKey: string,
+    clientPublicKey: string,
+    recipients: Array<{address: string, amount: number}>,
+    usdcMintAddress: string
+  ): Promise<string> {
+    try {
+      // Import required Solana libraries
+      const {
+        Connection,
+        Transaction,
+        Keypair,
+        PublicKey,
+        SystemProgram,
+        LAMPORTS_PER_SOL
+      } = await import('@solana/web3.js');
+
+      const {
+        TOKEN_PROGRAM_ID,
+        getAssociatedTokenAddress,
+        createTransferInstruction
+      } = await import('@solana/spl-token');
+
+      const connection = new Connection(this.rpcUrl, 'confirmed');
+
+      // Create facilitator keypair
+      const secretKey = bs58.decode(facilitatorPrivateKey);
+      const facilitatorKeypair = Keypair.fromSecretKey(secretKey);
+
+      // Create transaction
+      const transaction = new Transaction();
+
+      const clientPubkey = new PublicKey(clientPublicKey);
+      const usdcMint = new PublicKey(usdcMintAddress);
+
+      // Get client's USDC token account
+      const clientTokenAccount = await getAssociatedTokenAddress(usdcMint, clientPubkey);
+
+      // Add transfer instructions for each recipient
+      for (const recipient of recipients) {
+        const recipientPubkey = new PublicKey(recipient.address);
+        const recipientTokenAccount = await getAssociatedTokenAddress(usdcMint, recipientPubkey);
+
+        // Create transfer instruction
+        const transferInstruction = createTransferInstruction(
+          clientTokenAccount,
+          recipientTokenAccount,
+          clientPubkey,
+          recipient.amount,
+          [],
+          TOKEN_PROGRAM_ID
+        );
+
+        transaction.add(transferInstruction);
+      }
+
+      // Set fee payer and recent blockhash
+      transaction.feePayer = facilitatorKeypair.publicKey;
+      transaction.recentBlockhash = await this.getRecentBlockhash();
+
+      // This would normally require client signature, but for now simulate
+      // In real implementation, this transaction would be sent to client for signing
+      throw new Error('Split payment transactions require client signature integration');
+
+    } catch (error) {
+      throw new Error(
+        `Failed to create split payment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 
   /**

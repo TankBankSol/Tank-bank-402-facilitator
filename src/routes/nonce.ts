@@ -4,7 +4,6 @@
 
 import type { Request, Response } from 'express';
 import type { NonceDatabase } from '../lib/nonce-database.js';
-import { successResponse, errorResponse } from '../lib/api-response-helpers.js';
 
 export interface NonceRouteContext {
   nonceDb: NonceDatabase;
@@ -20,13 +19,13 @@ export function getNonceRoute(context: NonceRouteContext) {
       const details = await context.nonceDb.getNonceDetails(nonce);
 
       if (!details) {
-        res.status(404).json(errorResponse('Nonce not found', 'NONCE_NOT_FOUND', 404));
+        res.status(404).json({ error: 'Nonce not found'});
         return;
       }
 
-      res.json(successResponse(details));
+      res.json({ data: details });
     } catch (error) {
-      res.status(500).json(errorResponse(error instanceof Error ? error.message : 'Unknown error', 'NONCE_ERROR', 500));
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error'});
     }
   };
 }
