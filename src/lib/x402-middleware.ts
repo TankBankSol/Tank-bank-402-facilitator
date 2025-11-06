@@ -17,7 +17,8 @@ export interface X402Options {
 export interface RouteConfig {
   amount?: string;
   payTo?: string;
-  developerWallet?: string; // Developer wallet for 60% split
+  developerWallet?: string; // Developer wallet (merchant)
+  tankBankWallet?: string; // Tank Bank wallet for processing fee
   asset?: string;
   network?: string;
   description?: string;
@@ -189,10 +190,10 @@ export class X402Middleware {
           const timestamp = Date.now();
           const expiry = timestamp + (maxTimeoutSeconds || 300) * 1000;
 
-          // Calculate split amounts for atomic transaction
-          const totalAmount = parseInt(amount || '10000000');
-          const tankBankAmount = Math.floor(totalAmount * 0.4); // 40% to Tank Bank
-          const developerAmount = Math.floor(totalAmount * 0.6); // 60% to Developer
+          // Calculate payment amounts: Product Price + Tank Bank Fee
+          const productPrice = parseInt(amount || '25000'); // Merchant's product price
+          const tankBankFee = 12500; // Fixed $0.0125 USDC fee (12,500 units) - TODO: Use TANK_BANK_FEE_USDC constant
+          const totalAmount = productPrice + tankBankFee; // Total client pays
 
           // Store nonce in facilitator for later settlement
           try {
@@ -202,7 +203,7 @@ export class X402Middleware {
               body: JSON.stringify({
                 nonce,
                 amount: totalAmount.toString(),
-                recipient: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
+                recipient: payTo || 'MERCHANT_WALLET_REQUIRED',
                 resourceId: req.path,
                 resourceUrl: `${req.protocol}://${req.get('host')}${req.path}`,
                 timestamp,
@@ -212,16 +213,16 @@ export class X402Middleware {
                   totalAmount,
                   recipients: [
                     {
-                      address: activeDeveloperWallet,
-                      amount: developerAmount,
-                      percentage: 60,
-                      description: 'Developer revenue share'
+                      address: activeDeveloperWallet, // Merchant wallet
+                      amount: productPrice,
+                      percentage: Math.round((productPrice / totalAmount) * 100),
+                      description: 'Merchant product revenue'
                     },
                     {
-                      address: payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS',
-                      amount: tankBankAmount,
-                      percentage: 40,
-                      description: 'Tank Bank service fee'
+                      address: this.routeConfig.tankBankWallet || process.env.TANK_BANK_WALLET || 'TANK_BANK_WALLET_REQUIRED',
+                      amount: tankBankFee,
+                      percentage: Math.round((tankBankFee / totalAmount) * 100),
+                      description: 'Tank Bank processing fee'
                     }
                   ]
                 } : { enabled: false }
@@ -240,11 +241,11 @@ export class X402Middleware {
               {
                 scheme: 'exact' as const,
                 network: 'base' as const,
-                maxAmountRequired: String(amount || '10000000'),
+                maxAmountRequired: String(totalAmount),
                 resource: String(req.path),
                 description: String(description || `Payment required for ${req.path}`),
                 mimeType: String(mimeType || 'application/json'),
-                payTo: String(payTo || process.env.MERCHANT_SOLANA_ADDRESS || 'MERCHANT_WALLET_ADDRESS'),
+                payTo: String(payTo || 'MERCHANT_WALLET_REQUIRED'),
                 maxTimeoutSeconds: Number(maxTimeoutSeconds || 300),
                 asset: String(asset || 'SOL'),
                 outputSchema,

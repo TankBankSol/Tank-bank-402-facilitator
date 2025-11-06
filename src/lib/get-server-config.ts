@@ -9,7 +9,6 @@ import { z } from 'zod';
 const ServerConfigSchema = z.object({
   port: z.coerce.number().int().positive(),
   facilitatorUrl: z.string().url(),
-  merchantSolanaAddress: z.string().optional(),
   facilitatorPublicKey: z.string().optional(),
   solanaRpcUrl: z.string().url().optional(),
   solanaNetwork: z.enum(['mainnet-beta', 'devnet', 'testnet', 'localnet']).optional(),
@@ -28,7 +27,6 @@ export function getServerConfig(): ServerConfig {
     config = ServerConfigSchema.parse({
       port: process.env.SERVER_PORT ?? 3000,
       facilitatorUrl: process.env.FACILITATOR_URL ?? 'http://localhost:3001',
-      merchantSolanaAddress: process.env.MERCHANT_SOLANA_ADDRESS,
       facilitatorPublicKey: process.env.FACILITATOR_PUBLIC_KEY,
       solanaRpcUrl: process.env.SOLANA_RPC_URL,
       solanaNetwork: process.env.SOLANA_NETWORK ?? 'mainnet-beta',

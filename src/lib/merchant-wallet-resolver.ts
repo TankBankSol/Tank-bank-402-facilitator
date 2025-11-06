@@ -14,6 +14,7 @@ export interface MerchantWalletInfo {
 
 // Extend Express Request to include merchant wallet info
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       merchantWallet?: MerchantWalletInfo;
@@ -23,11 +24,11 @@ declare global {
 
 /**
  * Resolves merchant wallet address from multiple sources
- * Priority: X-Developer-Wallet header > MERCHANT_SOLANA_ADDRESS env > facilitator key
+ * Requires X-Developer-Wallet header - no fallbacks
  */
 export function resolveMerchantWallet(
   req: Request,
-  fallbackAddress?: string
+  _fallbackAddress?: string
 ): MerchantWalletInfo {
   // Check for header first (highest priority)
   const headerWallet = req.headers['x-developer-wallet'] as string;
@@ -39,23 +40,8 @@ export function resolveMerchantWallet(
     };
   }
 
-  // Check environment variable (medium priority)
-  const envWallet = process.env.MERCHANT_SOLANA_ADDRESS;
-  if (envWallet && envWallet.trim()) {
-    return {
-      address: envWallet.trim(),
-      source: 'environment',
-      fallbackUsed: false
-    };
-  }
-
-  // Use fallback address (lowest priority)
-  const defaultAddress = fallbackAddress || process.env.FACILITATOR_PUBLIC_KEY || 'MERCHANT_WALLET_NOT_CONFIGURED';
-  return {
-    address: defaultAddress,
-    source: 'default',
-    fallbackUsed: true
-  };
+  // No fallbacks - header is required
+  throw new Error('X-Developer-Wallet header is required. Merchants must specify their wallet address in the request header.');
 }
 
 /**
@@ -63,7 +49,19 @@ export function resolveMerchantWallet(
  */
 export function merchantWalletMiddleware(fallbackAddress?: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    req.merchantWallet = resolveMerchantWallet(req, fallbackAddress);
+    try {
+      req.merchantWallet = resolveMerchantWallet(req, fallbackAddress);
+    } catch (error) {
+      res.status(400).json({
+        error: 'X-Developer-Wallet header required',
+        message: 'Merchants must provide their wallet address in the X-Developer-Wallet header',
+        required: {
+          header: 'X-Developer-Wallet',
+          value: 'your_solana_wallet_address'
+        }
+      });
+      return;
+    }
 
     // Log wallet resolution for debugging (remove in production)
     if (process.env.NODE_ENV !== 'production') {
@@ -95,7 +93,20 @@ export function createDynamicX402Middleware(config: {
 
   return (req: Request, res: Response, next: NextFunction): void => {
     // Resolve merchant wallet dynamically
-    const walletInfo = resolveMerchantWallet(req, fallbackAddress);
+    let walletInfo;
+    try {
+      walletInfo = resolveMerchantWallet(req, fallbackAddress);
+    } catch (error) {
+      res.status(400).json({
+        error: 'X-Developer-Wallet header required',
+        message: 'Merchants must provide their wallet address in the X-Developer-Wallet header',
+        required: {
+          header: 'X-Developer-Wallet',
+          value: 'your_solana_wallet_address'
+        }
+      });
+      return;
+    }
 
     // Create middleware with resolved wallet address
     const dynamicConfig = {

@@ -11,8 +11,7 @@ import { createX402MiddlewareWithUtils } from '../lib/x402-middleware.js';
 import { successResponse, errorResponse } from '../lib/api-response-helpers.js';
 import {
   merchantWalletMiddleware,
-  createDynamicX402Middleware,
-  getMerchantWallet
+  createDynamicX402Middleware
 } from '../lib/merchant-wallet-resolver.js';
 import {
   REQUEST_TIMEOUT,
@@ -57,8 +56,8 @@ app.use(generalRateLimit);
 app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
 app.use(express.urlencoded({ extended: true }));
 
-// Merchant wallet resolution middleware
-app.use(merchantWalletMiddleware(context.config.facilitatorPublicKey));
+// Merchant wallet resolution middleware - only for protected routes
+// (Applied per-route basis, not globally)
 
 // Request logging
 app.use((req, _res, next) => {
@@ -87,9 +86,10 @@ app.get('/', (_req, res) => {
     status: 'running',
     version: '1.0.0',
     revenueSplit: {
-      merchant: 'Product price (set by merchant)',
-      tankBank: '$0.0125 USDC processing fee',
-      description: 'Merchants set their product prices, Tank Bank adds $0.0125 USDC processing fee per transaction'
+      merchant: 'Product price (100% to merchant)',
+      tankBank: '$0.0125 USDC processing fee (fixed)',
+      facilitator: 'Gas fees (paid by facilitator)',
+      description: 'Client pays: Product Price + $0.0125 USDC. Merchant gets product price, Tank Bank gets $0.0125 fee, facilitator covers gas.'
     },
     endpoints: {
       health: '/health',
@@ -106,7 +106,7 @@ app.get('/', (_req, res) => {
       description: 'Merchants set product prices, Tank Bank handles payment processing',
       merchantConfiguration: {
         header: 'Send X-Developer-Wallet header with your Solana wallet address',
-        environment: 'Set MERCHANT_SOLANA_ADDRESS environment variable (server-wide)',
+        environment: 'Merchants configure their own wallet address',
         priority: 'Header overrides environment variable',
         endpoint: '/merchant-wallet (shows current configuration)'
       }
@@ -143,7 +143,7 @@ app.get('/public', (_req, res) => {
 });
 
 // Merchant wallet info endpoint (shows current wallet configuration)
-app.get('/merchant-wallet', (req, res) => {
+app.get('/merchant-wallet', merchantWalletMiddleware(), (req, res) => {
   const walletInfo = req.merchantWallet;
   res.json(
     successResponse({
@@ -155,7 +155,7 @@ app.get('/merchant-wallet', (req, res) => {
       },
       configuration: {
         headerName: 'X-Developer-Wallet',
-        envVariable: 'MERCHANT_SOLANA_ADDRESS',
+        envVariable: 'Not applicable - merchants set their own environment',
         priority: 'Header > Environment > Default'
       },
       timestamp: new Date().toISOString(),
@@ -233,7 +233,7 @@ app.get('/api/premium-data', gamingRateLimit, premiumRouteMw, (req, res) => {
 const generateContentMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.GENERATE_CONTENT,
-    payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
+    // payTo will be resolved dynamically from X-Developer-Wallet header
     asset: 'USDC',
     network: 'base',
     description: 'AI-powered content generation service with custom prompts',
@@ -307,7 +307,7 @@ app.post('/api/generate-content', gamingRateLimit, generateContentMw.middleware,
 const downloadMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.DOWNLOAD_FILE,
-    payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
+    // payTo will be resolved dynamically from X-Developer-Wallet header
     asset: 'USDC',
     network: 'base',
     description: 'Secure file download with time-limited access tokens',
@@ -375,7 +375,7 @@ app.get('/api/download/:fileId', downloadMw.middleware, (req, res) => {
 const tierMw = createX402MiddlewareWithUtils(
   {
     amount: PAYMENT_AMOUNTS.TIER_ACCESS,
-    payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
+    // payTo will be resolved dynamically from X-Developer-Wallet header
     asset: 'USDC',
     network: 'base',
     description: 'Premium tier access with enhanced features and capabilities',
@@ -464,7 +464,7 @@ Object.keys(directionPrices).forEach(direction => {
   const middlewareConfig = createX402MiddlewareWithUtils(
     {
       amount: directionPrices[direction],
-      payTo: context.config.merchantSolanaAddress || context.config.facilitatorPublicKey || '',
+      // payTo will be resolved dynamically from X-Developer-Wallet header
       developerWallet: process.env.DEVELOPER_WALLET_ADDRESS || undefined,
       asset: 'USDC',
       network: 'base',

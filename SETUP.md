@@ -63,7 +63,7 @@ SOLANA_NETWORK=devnet
 # Server Configuration
 SERVER_PORT=3000
 FACILITATOR_URL=http://localhost:3001
-MERCHANT_SOLANA_ADDRESS=<merchant_wallet_address>
+# No merchant wallet config needed - merchants use X-Developer-Wallet header
 
 # Payment Configuration
 MAX_PAYMENT_AMOUNT=1000000000
