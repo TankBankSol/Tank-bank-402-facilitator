@@ -58,7 +58,7 @@ export function settlePaymentRoute(context: SettleRouteContext) {
         return res.json({ status: 'error', error: 'Nonce has expired' });
       }
 
-      // Check for split payment configuration
+      // Check for split payment configuration (60/40 revenue split)
       if (nonceDetails.splitPaymentData?.enabled) {
 
         // Validate that the total amount matches expected split payment total
@@ -71,25 +71,45 @@ export function settlePaymentRoute(context: SettleRouteContext) {
           });
         }
 
-        // Validate that Tank Bank fee is included and correct
+        // Validate 60/40 split: Find Tank Bank platform fee recipient
         const tankBankRecipient = nonceDetails.splitPaymentData.recipients.find(
-          (recipient: any) => recipient.description === 'Tank Bank processing fee'
+          (recipient: any) => recipient.description === 'Tank Bank platform fee (40%)'
         );
 
         if (!tankBankRecipient) {
           return res.json({
             status: 'error',
-            error: 'Tank Bank processing fee is required'
+            error: 'Tank Bank platform fee (40%) is required'
           });
         }
 
-        const expectedTankBankFee = parseInt(process.env.TANK_BANK_FEE_USDC || '12500');
-        const actualTankBankFee = Number(tankBankRecipient.amount);
-        if (actualTankBankFee !== expectedTankBankFee) {
+        // Validate that Tank Bank receives exactly 40% of the transaction
+        const expectedTankBankShare = Math.floor(actualAmount * 0.4);
+        const actualTankBankShare = Number(tankBankRecipient.amount);
+
+        // Allow small rounding differences (within 1 micro-unit)
+        if (Math.abs(actualTankBankShare - expectedTankBankShare) > 1) {
           return res.json({
             status: 'error',
-            error: `Invalid Tank Bank fee. Expected: ${expectedTankBankFee}, Received: ${tankBankRecipient.amount}`
+            error: `Invalid Tank Bank share. Expected 40% (${expectedTankBankShare}), Received: ${actualTankBankShare}`
           });
+        }
+
+        // Validate creator receives 60%
+        const creatorRecipient = nonceDetails.splitPaymentData.recipients.find(
+          (recipient: any) => recipient.description?.includes('Creator') || recipient.description?.includes('60%')
+        );
+
+        if (creatorRecipient) {
+          const expectedCreatorShare = Math.floor(actualAmount * 0.6);
+          const actualCreatorShare = Number(creatorRecipient.amount);
+
+          if (Math.abs(actualCreatorShare - expectedCreatorShare) > 1) {
+            return res.json({
+              status: 'error',
+              error: `Invalid creator share. Expected 60% (${expectedCreatorShare}), Received: ${actualCreatorShare}`
+            });
+          }
         }
       }
 

@@ -40,15 +40,17 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: [
     'https://tankbank.app',
-    'https://api.tankbank.app',
-    'https://facilitator.tankbank.app',
+    'https://www.tankbank.app',
+    'https://tank-bank-site.vercel.app',
+    /\.vercel\.app$/,  // Allow all Vercel preview deployments
     // Allow localhost for development and testing
     'http://localhost:3000',
+    'http://localhost:5173',  // Vite dev server
     'http://localhost:3001'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Payment']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Payment', 'X-Developer-Wallet']
 }));
 
 // Rate limiting and slow down middleware

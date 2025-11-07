@@ -43,43 +43,8 @@ services:
         value: 500000
       - key: TANK_BANK_WALLET
         sync: false  # Set Tank Bank wallet address in Render dashboard
-
-  # Server Service
-  - type: web
-    name: x402-server
-    runtime: node
-    plan: free
-    buildCommand: npm ci && npm run build
-    startCommand: npm run start:server
-    domains:
-      - api.tankbank.app
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: SERVER_PORT
-        value: 3000
-      - key: FACILITATOR_URL
-        value: https://facilitator.tankbank.app
-      - key: SOLANA_RPC_URL
-        sync: false  # Set this in Render dashboard
-      - key: SOLANA_WS_URL
-        sync: false  # Set this in Render dashboard
-      - key: SOLANA_NETWORK
-        value: mainnet-beta
-      - key: REQUEST_TIMEOUT
-        value: 30000
-      - key: RETRY_ATTEMPTS
-        value: 3
-      - key: RETRY_DELAY
-        value: 1000
-      - key: REQUEST_BODY_LIMIT
-        value: 10mb
-      - key: PREMIUM_DATA_AMOUNT
-        value: 100000
-      - key: GENERATE_CONTENT_AMOUNT
-        value: 50000
-      - key: DOWNLOAD_FILE_AMOUNT
-        value: 200000
-      - key: TIER_ACCESS_AMOUNT
-        value: 500000
+      - key: TANK_BANK_REVENUE_PERCENTAGE
+        value: 40
+      - key: CREATOR_REVENUE_PERCENTAGE
+        value: 60
 
